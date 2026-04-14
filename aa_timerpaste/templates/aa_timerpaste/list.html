@@ -1,77 +1,202 @@
 {% extends "aa_timerpaste/base.html" %}
-{% block page_title %}Timer Paste{% endblock %}
+{% block page_title %}Timerboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">Timerboard</h2>
-    <div class="d-flex gap-2">
-      <a class="btn btn-primary" href="{% url 'aa_timerpaste:paste' %}">Paste Timers</a>
-      <a class="btn btn-outline-secondary" href="{% url 'aa_timerpaste:export_csv' %}?{{ request.GET.urlencode }}">CSV</a>
-      <a class="btn btn-outline-secondary" href="{% url 'aa_timerpaste:export_json' %}?{{ request.GET.urlencode }}">JSON</a>
+
+<style>
+.timerpage {
+  --tp-bg: #f4f7fb;
+  --tp-card: #ffffff;
+  --tp-line: #d8e1ea;
+  --tp-text: #203040;
+  --tp-muted: #6b7c93;
+  --tp-head: #22374d;
+  --tp-blue: #2f6ea5;
+  --tp-blue-soft: #eaf3fb;
+  --tp-green-soft: #edf8f2;
+  --tp-amber-soft: #fff7e8;
+  --tp-red-soft: #fceeee;
+  --tp-shadow: 0 8px 24px rgba(20, 40, 70, 0.08);
+  color: var(--tp-text);
+}
+.timerpage .page-header {
+  display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:16px;
+}
+.timerpage .page-title { margin:0; font-size:34px; font-weight:700; color:var(--tp-head); }
+.timerpage .page-subtitle { margin:4px 0 0; color:var(--tp-muted); }
+.timerpage .toolbar { display:flex; gap:10px; flex-wrap:wrap; }
+.timerpage .btn-pill { border-radius:10px; }
+.timerpage .panel {
+  background: var(--tp-card);
+  border: 1px solid var(--tp-line);
+  border-radius: 14px;
+  box-shadow: var(--tp-shadow);
+  margin-bottom: 16px;
+}
+.timerpage .panel-body { padding: 18px; }
+.timerpage .stats {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.timerpage .stat {
+  background: var(--tp-card);
+  border:1px solid var(--tp-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--tp-shadow);
+}
+.timerpage .stat-label { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--tp-muted); }
+.timerpage .stat-value { font-size:26px; font-weight:700; color:var(--tp-head); margin-top:4px; }
+.timerpage .filters-grid {
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+}
+.timerpage .span-3 { grid-column: span 3; }
+.timerpage .span-2 { grid-column: span 2; }
+.timerpage .span-4 { grid-column: span 4; }
+.timerpage .span-6 { grid-column: span 6; }
+.timerpage .span-12 { grid-column: span 12; }
+.timerpage label { font-weight:600; color:var(--tp-head); margin-bottom:6px; display:block; }
+.timerpage .toggle-row { display:flex; gap:18px; align-items:flex-end; flex-wrap:wrap; height:100%; }
+.timerpage .toggle-card {
+  background:#f8fbff; border:1px solid var(--tp-line); border-radius:10px; padding:10px 12px;
+}
+.timerpage .table-wrap {
+  overflow:auto;
+  border: 1px solid var(--tp-line);
+  border-radius: 14px;
+  background: #fff;
+}
+.timerpage .table {
+  margin:0;
+  background:#fff;
+}
+.timerpage .table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f7fafc;
+  color: var(--tp-head);
+  border-bottom: 1px solid var(--tp-line);
+  white-space: nowrap;
+}
+.timerpage .table tbody tr:hover { background:#fbfdff; }
+.timerpage .table td, .timerpage .table th { vertical-align: top; }
+.timerpage .details-title { font-weight:700; color:var(--tp-head); }
+.timerpage .meta-row { margin-top:4px; color:var(--tp-muted); font-size:12px; }
+.timerpage .chip {
+  display:inline-flex; align-items:center; border-radius:999px; padding:4px 10px;
+  font-size:12px; font-weight:700; line-height:1.2; border:1px solid transparent;
+}
+.timerpage .chip + .chip { margin-left:6px; }
+.timerpage .chip-hostile { background:var(--tp-red-soft); color:#a63b3b; border-color:#f3cbcb; }
+.timerpage .chip-neutral { background:var(--tp-amber-soft); color:#9a6500; border-color:#f0ddad; }
+.timerpage .chip-friendly { background:var(--tp-green-soft); color:#2f7a47; border-color:#cfe7d8; }
+.timerpage .chip-priority-high, .timerpage .chip-priority-critical { background:#ffecec; color:#a53d3d; border-color:#f2c8c8; }
+.timerpage .chip-priority-normal { background:#eef4fb; color:#35608f; border-color:#d5e2f0; }
+.timerpage .chip-priority-low { background:#f4f4f4; color:#666; border-color:#e0e0e0; }
+.timerpage .chip-state { background:#eef4fb; color:#355b84; border-color:#d5e2ef; }
+.timerpage .countdown-soon { color:#b04b00; font-weight:700; }
+.timerpage .countdown-past { color:#9b3e3e; font-weight:700; }
+.timerpage .action-stack { display:flex; gap:6px; flex-wrap:wrap; min-width:154px; }
+.timerpage .action-stack form { margin:0; }
+.timerpage .soft-help { color:var(--tp-muted); font-size:13px; }
+.timerpage .section-title { margin:0 0 4px; font-size:18px; color:var(--tp-head); }
+.timerpage .section-subtitle { margin:0; color:var(--tp-muted); font-size:13px; }
+.timerpage .review-tools { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.timerpage .dup-warn { color:#a46000; font-size:12px; font-weight:600; }
+@media (max-width: 1100px) {
+  .timerpage .span-3, .timerpage .span-2, .timerpage .span-4, .timerpage .span-6 { grid-column: span 6; }
+}
+@media (max-width: 768px) {
+  .timerpage .span-3, .timerpage .span-2, .timerpage .span-4, .timerpage .span-6, .timerpage .span-12 { grid-column: span 12; }
+  .timerpage .page-title { font-size:28px; }
+}
+</style>
+
+<div class="container-fluid timerpage">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Timerboard</h2>
+      <p class="page-subtitle">Clean board view for upcoming structure and objective timers.</p>
+    </div>
+    <div class="toolbar">
+      <a class="btn btn-primary btn-pill" href="{% url 'aa_timerpaste:paste' %}">Paste Timers</a>
+      <a class="btn btn-outline-secondary btn-pill" href="{% url 'aa_timerpaste:export_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+      <a class="btn btn-outline-secondary btn-pill" href="{% url 'aa_timerpaste:export_json' %}?{{ request.GET.urlencode }}">Export JSON</a>
     </div>
   </div>
 
-  <form method="get" class="card card-body mb-3">
-    <div class="row g-2">
-      <div class="col-md-3">
-        <label class="form-label">Search</label>
-        <input class="form-control" type="text" name="q" value="{{ request.GET.q }}">
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Showing</div><div class="stat-value">{{ board_stats.filtered_count }}</div></div>
+    <div class="stat"><div class="stat-label">Active</div><div class="stat-value">{{ board_stats.active_count }}</div></div>
+    <div class="stat"><div class="stat-label">Upcoming</div><div class="stat-value">{{ board_stats.upcoming_count }}</div></div>
+    <div class="stat"><div class="stat-label">Archived</div><div class="stat-value">{{ board_stats.archived_count }}</div></div>
+  </div>
+
+  <form method="get" class="panel">
+    <div class="panel-body">
+      <div class="mb-3">
+        <h3 class="section-title">Filters</h3>
+        <p class="section-subtitle">Keep the view narrow enough to scan quickly.</p>
       </div>
-      <div class="col-md-2">
-        <label class="form-label">Objective</label>
-        {{ filter_form.objective }}
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Structure</label>
-        {{ filter_form.structure_type }}
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Priority</label>
-        {{ filter_form.priority }}
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Region</label>
-        <input class="form-control" type="text" name="region_name" value="{{ request.GET.region_name }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Campaign</label>
-        <input class="form-control" type="text" name="campaign_name" value="{{ request.GET.campaign_name }}">
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">State</label>
-        {{ filter_form.timer_state }}
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <div class="form-check me-3">
-          <input class="form-check-input" type="checkbox" name="upcoming_only" id="upcoming_only" {% if request.GET.upcoming_only or request.GET.upcoming_only == "" %}checked{% endif %}>
-          <label class="form-check-label" for="upcoming_only">Upcoming only</label>
+      <div class="filters-grid">
+        <div class="span-6">
+          <label>Search</label>
+          {{ filter_form.q }}
         </div>
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="include_archived" id="include_archived" {% if request.GET.include_archived %}checked{% endif %}>
-          <label class="form-check-label" for="include_archived">Include archived</label>
+        <div class="span-3">
+          <label>Region</label>
+          {{ filter_form.region_name }}
         </div>
-      </div>
-      <div class="col-md-3 d-flex align-items-end gap-2">
-        <button class="btn btn-secondary" type="submit">Apply filters</button>
-        <a class="btn btn-outline-secondary" href="{% url 'aa_timerpaste:list' %}">Reset</a>
+        <div class="span-3">
+          <label>Campaign</label>
+          {{ filter_form.campaign_name }}
+        </div>
+
+        <div class="span-3">
+          <label>Objective</label>
+          {{ filter_form.objective }}
+        </div>
+        <div class="span-3">
+          <label>Structure</label>
+          {{ filter_form.structure_type }}
+        </div>
+        <div class="span-3">
+          <label>Priority</label>
+          {{ filter_form.priority }}
+        </div>
+        <div class="span-3">
+          <label>State</label>
+          {{ filter_form.timer_state }}
+        </div>
+
+        <div class="span-6">
+          <div class="toggle-row">
+            <label class="toggle-card"><input type="checkbox" name="upcoming_only" {% if request.GET.upcoming_only or request.GET.upcoming_only == "" %}checked{% endif %}> Upcoming only</label>
+            <label class="toggle-card"><input type="checkbox" name="include_archived" {% if request.GET.include_archived %}checked{% endif %}> Include archived</label>
+          </div>
+        </div>
+        <div class="span-6">
+          <div class="toolbar" style="justify-content:flex-end; width:100%;">
+            <a class="btn btn-outline-secondary btn-pill" href="{% url 'aa_timerpaste:list' %}">Reset</a>
+            <button class="btn btn-secondary btn-pill" type="submit">Apply filters</button>
+          </div>
+        </div>
       </div>
     </div>
   </form>
 
-  <div class="table-responsive">
-    <table id="timerTable" class="table table-striped table-bordered align-middle">
+  <div class="table-wrap">
+    <table id="timerTable" class="table table-hover">
       <thead>
         <tr>
-          <th>Details</th>
-          <th>Objective</th>
-          <th>Priority</th>
-          <th>State</th>
-          <th>Campaign</th>
-          <th>System</th>
-          <th>Region</th>
+          <th>Timer</th>
+          <th>Context</th>
+          <th>Location</th>
           <th>Structure</th>
           <th>EVE Time</th>
           <th>Local Time</th>
@@ -84,40 +209,45 @@
         {% for row in entries %}
         <tr>
           <td>
-            <strong>{{ row.details }}</strong>
-            {% if row.moon_or_location %}<br><small>{{ row.moon_or_location }}</small>{% endif %}
-            {% if row.owner_name %}<br><small>Owner: {{ row.owner_name }}</small>{% endif %}
-            {% if row.notes %}<br><small>{{ row.notes|truncatechars:90 }}</small>{% endif %}
+            <div class="details-title">{{ row.details }}</div>
+            {% if row.moon_or_location %}<div class="meta-row">{{ row.moon_or_location }}</div>{% endif %}
+            {% if row.owner_name %}<div class="meta-row">Owner: {{ row.owner_name }}</div>{% endif %}
+            {% if row.notes %}<div class="meta-row">{{ row.notes|truncatechars:110 }}</div>{% endif %}
           </td>
-          <td>{{ row.get_objective_display }}</td>
-          <td>{{ row.get_priority_display }}</td>
-          <td>{{ row.get_timer_state_display }}</td>
-          <td>{{ row.campaign_name }}</td>
-          <td>{{ row.system_name }}</td>
-          <td>{{ row.region_name|default:"Unknown" }}</td>
+          <td>
+            <div><span class="chip chip-{{ row.objective }}">{{ row.get_objective_display }}</span></div>
+            <div style="margin-top:6px;"><span class="chip chip-priority-{{ row.priority }}">{{ row.get_priority_display }}</span></div>
+            <div style="margin-top:6px;"><span class="chip chip-state">{{ row.get_timer_state_display }}</span></div>
+            {% if row.campaign_name %}<div class="meta-row">Campaign: {{ row.campaign_name }}</div>{% endif %}
+          </td>
+          <td>
+            <div><strong>{{ row.system_name|default:"Unknown" }}</strong></div>
+            <div class="meta-row">{{ row.region_name|default:"Unknown region" }}</div>
+            {% if row.constellation_name %}<div class="meta-row">{{ row.constellation_name }}</div>{% endif %}
+          </td>
           <td>{{ row.get_structure_type_display }}</td>
           <td data-order="{{ row.timer_at|date:'Y-m-d H:i:s' }}">{{ row.timer_at|date:"Y-m-d H:i:s" }}</td>
           <td class="local-time" data-utc="{{ row.timer_at|date:'c' }}">-</td>
           <td class="countdown" data-utc="{{ row.timer_at|date:'c' }}" data-order="{{ row.timer_at|date:'U' }}">-</td>
           <td>{{ row.created_by }}</td>
           <td>
-            <div class="d-flex flex-column gap-1">
+            <div class="action-stack">
               <a class="btn btn-sm btn-outline-primary" href="{% url 'aa_timerpaste:edit' row.pk %}">Edit</a>
               {% if not row.is_archived %}
               <form method="post" action="{% url 'aa_timerpaste:archive' row.pk %}">
                 {% csrf_token %}
-                <button class="btn btn-sm btn-outline-warning w-100" type="submit">Archive</button>
+                <button class="btn btn-sm btn-outline-warning" type="submit">Archive</button>
               </form>
               {% endif %}
               <form method="post" action="{% url 'aa_timerpaste:delete' row.pk %}" onsubmit="return confirm('Delete this timer?');">
                 {% csrf_token %}
-                <button class="btn btn-sm btn-outline-danger w-100" type="submit">Delete</button>
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
               </form>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="13">No timers.</td></tr>
+        <tr><td colspan="9" class="soft-help">No timers match this view.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -130,7 +260,7 @@
   if (!table) return;
   const tbody = table.querySelector("tbody");
   let rows = Array.from(tbody.querySelectorAll("tr"));
-  let sortState = { index: 8, dir: "asc" };
+  let sortState = { index: 4, dir: "asc" };
 
   function pad(n) { return String(n).padStart(2, "0"); }
 
@@ -138,22 +268,31 @@
     const now = new Date();
     const target = new Date(targetIso);
     let diff = Math.floor((target - now) / 1000);
-    const prefix = diff < 0 ? "-" : "";
+    const isPast = diff < 0;
     diff = Math.abs(diff);
     const d = Math.floor(diff / 86400);
     const h = Math.floor((diff % 86400) / 3600);
     const m = Math.floor((diff % 3600) / 60);
-    return prefix + (d ? d + "d " : "") + pad(h) + ":" + pad(m);
+    return {
+      text: (isPast ? "-" : "") + (d ? d + "d " : "") + pad(h) + ":" + pad(m),
+      isPast,
+      isSoon: !isPast && diff <= 6 * 3600
+    };
   }
 
   document.querySelectorAll(".local-time").forEach(el => {
     const dt = new Date(el.dataset.utc);
-    el.innerText = dt.toLocaleString();
+    el.innerText = dt.toLocaleString([], {
+      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
+    });
   });
 
   function refreshCountdowns() {
     document.querySelectorAll(".countdown").forEach(el => {
-      el.innerText = renderCountdown(el.dataset.utc);
+      const result = renderCountdown(el.dataset.utc);
+      el.innerText = result.text;
+      el.classList.toggle("countdown-past", result.isPast);
+      el.classList.toggle("countdown-soon", result.isSoon);
     });
   }
 
@@ -177,14 +316,14 @@
   }
 
   Array.from(table.querySelectorAll("thead th")).forEach((th, index) => {
-    if (index === 12) return;
+    if (index === 8) return;
     th.style.cursor = "pointer";
     th.addEventListener("click", () => sortRows(index));
   });
 
   refreshCountdowns();
   setInterval(refreshCountdowns, 30000);
-  sortRows(8);
+  sortRows(4);
 })();
 </script>
 {% endblock %}

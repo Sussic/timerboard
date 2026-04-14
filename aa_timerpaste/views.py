@@ -75,6 +75,12 @@ class TimerEntryListView(LoginRequiredMixin, PermissionRequiredMixin, TimerQuery
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["filter_form"] = self.filter_form
+        context["board_stats"] = {
+            "filtered_count": self.object_list.count(),
+            "active_count": TimerEntry.objects.filter(is_archived=False).count(),
+            "upcoming_count": TimerEntry.objects.filter(is_archived=False, timer_at__gte=dj_timezone.now()).count(),
+            "archived_count": TimerEntry.objects.filter(is_archived=True).count(),
+        }
         return context
 
 

@@ -116,3 +116,16 @@ Still expected from the installer/reviewer:
 - generate real Django migrations in the target environment
 - test against the exact Alliance Auth version in use
 - verify hook/menu behavior and theme fit
+
+
+## v5 source fix
+
+This package fixes the `ParsedTimer` indentation defect in `aa_timerpaste/parser.py` and syncs package version metadata to `0.1.2`.
+
+## v6 UI refresh
+
+- cleaner board layout with summary stats and clearer filters
+- simplified table structure focused on scanning
+- better visual badges for objective, priority, and state
+- improved paste preview layout with grouped fields
+- clearer edit form styling

@@ -8,7 +8,7 @@ class TimerPasteForm(forms.Form):
         label="Paste timer text",
         widget=forms.Textarea(attrs={
             "rows": 18,
-            "class": "form-control",
+            "class": "form-control timerpaste-textarea",
             "placeholder": "Paste Discord or clipboard timers here",
         }),
     )
@@ -60,12 +60,25 @@ class TimerEntryForm(forms.ModelForm):
 
 
 class TimerFilterForm(forms.Form):
-    q = forms.CharField(required=False)
-    objective = forms.ChoiceField(required=False, choices=[("", "All objectives")] + TimerEntry.OBJECTIVE_CHOICES)
-    structure_type = forms.ChoiceField(required=False, choices=[("", "All structures")] + TimerEntry.STRUCTURE_CHOICES)
-    priority = forms.ChoiceField(required=False, choices=[("", "All priorities")] + TimerEntry.PRIORITY_CHOICES)
-    timer_state = forms.ChoiceField(required=False, choices=[("", "All states")] + TimerEntry.STATE_CHOICES)
-    region_name = forms.CharField(required=False)
-    campaign_name = forms.CharField(required=False)
+    q = forms.CharField(required=False, widget=forms.TextInput(attrs={
+        "class": "form-control",
+        "placeholder": "Search system, notes, campaign, owner...",
+    }))
+    objective = forms.ChoiceField(required=False, choices=[("", "All objectives")] + TimerEntry.OBJECTIVE_CHOICES,
+                                  widget=forms.Select(attrs={"class": "form-control"}))
+    structure_type = forms.ChoiceField(required=False, choices=[("", "All structures")] + TimerEntry.STRUCTURE_CHOICES,
+                                       widget=forms.Select(attrs={"class": "form-control"}))
+    priority = forms.ChoiceField(required=False, choices=[("", "All priorities")] + TimerEntry.PRIORITY_CHOICES,
+                                 widget=forms.Select(attrs={"class": "form-control"}))
+    timer_state = forms.ChoiceField(required=False, choices=[("", "All states")] + TimerEntry.STATE_CHOICES,
+                                    widget=forms.Select(attrs={"class": "form-control"}))
+    region_name = forms.CharField(required=False, widget=forms.TextInput(attrs={
+        "class": "form-control",
+        "placeholder": "Filter by region",
+    }))
+    campaign_name = forms.CharField(required=False, widget=forms.TextInput(attrs={
+        "class": "form-control",
+        "placeholder": "Filter by campaign",
+    }))
     include_archived = forms.BooleanField(required=False)
     upcoming_only = forms.BooleanField(required=False, initial=True)

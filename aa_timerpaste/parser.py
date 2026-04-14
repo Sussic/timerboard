@@ -12,6 +12,7 @@ SECURITY_RE = re.compile(r"^\s*Sec\.\s*[\d.,]+\s*$", re.I)
 SKYHOOK_RE = re.compile(r"Orbital Skyhook\s+\((?P<inside>[^)]+)\)\s+\[(?P<owner>[^\]]+)\]", re.I)
 SYSTEM_MOON_RE = re.compile(r"^(?P<system>[A-Z0-9-]+)\s*-\s*(?P<location>.+)$")
 BRIDGE_RE = re.compile(r"^(?P<source>[A-Z0-9-]+)\s*»\s*(?P<dest>[A-Z0-9-]+)\s*-\s*(?P<label>.+)$")
+
 STRUCTURE_KEYWORDS = {
     "orbital skyhook": "skyhook",
     "metenox": "metenox",
@@ -36,8 +37,8 @@ class ParsedTimer:
     moon_or_location: str = ""
     structure_type: str = "other"
     owner_name: str = ""
-        timer_at: Optional[datetime] = None
-        parse_notes: list[str] = field(default_factory=list)
+    timer_at: Optional[datetime] = None
+    parse_notes: list[str] = field(default_factory=list)
 
     def as_dict(self):
         return {
@@ -48,8 +49,8 @@ class ParsedTimer:
             "moon_or_location": self.moon_or_location,
             "structure_type": self.structure_type,
             "owner_name": self.owner_name,
-                        "timer_at": self.timer_at,
-                        "parse_notes": "; ".join(self.parse_notes),
+            "timer_at": self.timer_at,
+            "parse_notes": "; ".join(self.parse_notes),
         }
 
 
@@ -82,11 +83,11 @@ def infer_structure_type(lines: list[str]) -> str:
 
 def infer_objective(lines: list[str]) -> str:
     joined = " ".join(lines).lower()
-    if any(k in joined for k in ["hostile", "noco", "northern coalition", "fraternity", "frat", "dice"]):
-        return "hostile"
     if "friendly" in joined:
         return "friendly"
-    return "unknown"
+    if "neutral" in joined:
+        return "neutral"
+    return "hostile"
 
 
 def parse_timer_block(block: str) -> Optional[ParsedTimer]:
@@ -112,13 +113,8 @@ def parse_timer_block(block: str) -> Optional[ParsedTimer]:
         if REINFORCED_RE.search(line):
             continue
         if DISTANCE_RE.match(line):
-            data.distance_text = line
             continue
         if SECURITY_RE.match(line):
-            if data.distance_text:
-                data.distance_text += f" | {line}"
-            else:
-                data.distance_text = line
             continue
 
         sky = SKYHOOK_RE.search(line)
@@ -158,7 +154,6 @@ def parse_timer_block(block: str) -> Optional[ParsedTimer]:
             data.details = line
 
     if not data.system_name:
-        data.parse_status = "unknown_system"
         data.parse_notes.append("No system could be extracted from pasted text.")
 
     if not data.details:
@@ -180,7 +175,7 @@ def split_blocks(raw_text: str) -> list[str]:
 
     if current:
         remainder = "\n".join(current).strip()
-        if remainder:
+        if remainder and REINFORCED_RE.search(remainder):
             blocks.append(remainder)
 
     return [b for b in blocks if REINFORCED_RE.search(b)]
