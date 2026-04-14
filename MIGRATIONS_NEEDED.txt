@@ -1,0 +1,1 @@
+Run: python manage.py makemigrations aa_timerpaste && python manage.py migrate

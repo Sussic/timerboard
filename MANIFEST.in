@@ -1,0 +1,6 @@
+recursive-include aa_timerpaste/templates *
+recursive-include aa_timerpaste/migrations *
+recursive-include aa_timerpaste/static *
+recursive-include aa_timerpaste *.html
+recursive-include aa_timerpaste *.txt
+recursive-include aa_timerpaste *.json

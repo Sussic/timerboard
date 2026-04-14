@@ -1,0 +1,79 @@
+{% extends "aa_timerpaste/base.html" %}
+{% block page_title %}Paste Timers{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h2 class="mb-3">Paste Timers</h2>
+  <p class="text-muted">Paste raw Discord or clipboard text. Preview, edit, remove rows, then save.</p>
+
+  <form method="post" class="mb-4">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.raw_text.label_tag }}
+      {{ form.raw_text }}
+    </div>
+    <div class="form-check mb-3">
+      {{ form.save_unknown_systems }}
+      {{ form.save_unknown_systems.label_tag }}
+    </div>
+    <button class="btn btn-secondary" type="submit">Preview Parse</button>
+
+    {% if preview_rows %}
+      <hr>
+      <input type="hidden" name="row_count" value="{{ preview_rows|length }}">
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th>Keep</th>
+              <th>Details</th>
+              <th>Objective</th>
+              <th>System</th>
+              <th>Region</th>
+              <th>Moon/Location</th>
+              <th>Structure</th>
+              <th>Timer</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview_rows %}
+            <tr>
+              <td>
+                <input type="checkbox" name="keep_{{ row.idx }}" checked>
+                <input type="hidden" name="raw_text_{{ row.idx }}" value="{{ row.raw_text|escape }}">
+                <input type="hidden" name="owner_name_{{ row.idx }}" value="{{ row.owner_name }}">
+              </td>
+              <td><input class="form-control" type="text" name="details_{{ row.idx }}" value="{{ row.details }}"></td>
+              <td>
+                <select class="form-control" name="objective_{{ row.idx }}">
+                  {% for value, label in objective_choices %}
+                    <option value="{{ value }}"{% if value == row.objective %} selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input class="form-control" type="text" name="system_name_{{ row.idx }}" value="{{ row.system_name }}"></td>
+              <td>
+                <input class="form-control" type="text" value="{{ row.region_name }}" disabled>
+              </td>
+              <td><input class="form-control" type="text" name="moon_or_location_{{ row.idx }}" value="{{ row.moon_or_location }}"></td>
+              <td>
+                <select class="form-control" name="structure_type_{{ row.idx }}">
+                  {% for value, label in structure_choices %}
+                    <option value="{{ value }}"{% if value == row.structure_type %} selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input class="form-control" type="text" name="timer_at_{{ row.idx }}" value="{{ row.timer_at }}"></td>
+              <td><input class="form-control" type="text" name="parse_notes_{{ row.idx }}" value="{{ row.parse_notes }}"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <button class="btn btn-primary" type="submit" name="save" value="1">Save Parsed Timers</button>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

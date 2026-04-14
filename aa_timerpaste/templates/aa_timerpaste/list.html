@@ -1,0 +1,96 @@
+{% extends "aa_timerpaste/base.html" %}
+{% block page_title %}Timer Paste{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Upcoming Timers</h2>
+    <a class="btn btn-primary" href="{% url 'aa_timerpaste:paste' %}">Paste Timers</a>
+  </div>
+
+  <div class="mb-3">
+    <input id="timerSearch" class="form-control" type="text" placeholder="Search timers">
+  </div>
+
+  <div class="table-responsive">
+    <table id="timerTable" class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Details</th>
+          <th>Objective</th>
+          <th>System</th>
+          <th>Region</th>
+          <th>Structure</th>
+          <th>EVE Time</th>
+          <th>Creator</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in entries %}
+        <tr>
+          <td>{{ row.details }}</td>
+          <td>{{ row.get_objective_display }}</td>
+          <td>{{ row.system_name }}{% if row.moon_or_location %}<br><small>{{ row.moon_or_location }}</small>{% endif %}</td>
+          <td>{{ row.region_name|default:"Unknown" }}</td>
+          <td>{{ row.get_structure_type_display }}</td>
+          <td data-order="{{ row.timer_at|date:'Y-m-d H:i:s' }}">{{ row.timer_at|date:"Y-m-d H:i:s" }}</td>
+          <td>{{ row.created_by }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No timers.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const search = document.getElementById("timerSearch");
+  const table = document.getElementById("timerTable");
+  if (!table) return;
+  const tbody = table.querySelector("tbody");
+  let rows = Array.from(tbody.querySelectorAll("tr"));
+  let sortState = { index: 5, dir: "asc" };
+
+  function rowText(row) {
+    return row.innerText.toLowerCase();
+  }
+
+  function applySearch() {
+    const q = (search.value || "").trim().toLowerCase();
+    rows.forEach(row => {
+      row.style.display = !q || rowText(row).includes(q) ? "" : "none";
+    });
+  }
+
+  function cellValue(row, index) {
+    const cell = row.children[index];
+    if (!cell) return "";
+    return (cell.getAttribute("data-order") || cell.innerText || "").trim().toLowerCase();
+  }
+
+  function sortRows(index) {
+    const dir = (sortState.index === index && sortState.dir === "asc") ? "desc" : "asc";
+    sortState = { index, dir };
+    rows.sort((a, b) => {
+      const av = cellValue(a, index);
+      const bv = cellValue(b, index);
+      if (av < bv) return dir === "asc" ? -1 : 1;
+      if (av > bv) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    rows.forEach(r => tbody.appendChild(r));
+    applySearch();
+  }
+
+  Array.from(table.querySelectorAll("thead th")).forEach((th, index) => {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => sortRows(index));
+  });
+
+  search.addEventListener("input", applySearch);
+  sortRows(5);
+})();
+</script>
+{% endblock %}
