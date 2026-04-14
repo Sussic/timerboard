@@ -91,3 +91,28 @@ This version includes packaging metadata for `pip install git+...` installs:
 - `MANIFEST.in` for Django templates, migrations, and static files
 
 That is intended to prevent reinstall issues where templates are missing from the installed package.
+
+
+## v4 feature set
+
+This build adds a broader operational timerboard feature set:
+
+- editable preview before save
+- row removal before save
+- default hostile objective
+- objective / priority / state fields
+- campaign field
+- duplicate warnings during preview
+- optional skip of duplicates on save
+- saved timer edit page
+- archive and delete actions
+- archived timer support
+- local time and countdown columns
+- server-side filters
+- CSV and JSON export
+- cleanup command to archive expired timers
+
+Still expected from the installer/reviewer:
+- generate real Django migrations in the target environment
+- test against the exact Alliance Auth version in use
+- verify hook/menu behavior and theme fit
