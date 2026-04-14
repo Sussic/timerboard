@@ -1,5 +1,0 @@
-[project]
-name = "aa-timerpaste"
-version = "0.1.0"
-description = "Minimal Alliance Auth bulk timer paste plugin"
-requires-python = ">=3.10"
